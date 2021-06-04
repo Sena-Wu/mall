@@ -14,11 +14,11 @@ class ResponseMessage(object):
 
 class Res(object):
     """
-    封装响应
+    封装统一响应工具类
     """
 
     @staticmethod
-    def success(data=None, code=ResponseCode.SUCCESS, msg=ResponseMessage.SUCCESS):
+    def response(data, code, msg):
         return {
             "code": code,
             "msg": msg,
@@ -26,9 +26,9 @@ class Res(object):
         }
 
     @staticmethod
+    def success(data=None, code=ResponseCode.SUCCESS, msg=ResponseMessage.SUCCESS):
+        Res.response(data, code, msg)
+
+    @staticmethod
     def fail(data=None, code=ResponseCode.FAIL, msg=ResponseMessage.FAIL):
-        return {
-            "code": code,
-            "msg": msg,
-            "data": data
-        }
+        Res.response(data, code, msg)
