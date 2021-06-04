@@ -8,7 +8,7 @@ from flask.json import JSONEncoder
 
 class CustomJSONEncoder(JSONEncoder):
     """
-    解决datetime无法序列化的问题
+    解决datetime、date无法序列化的问题
     """
 
     def default(self, obj):
