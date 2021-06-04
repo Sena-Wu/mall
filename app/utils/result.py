@@ -27,8 +27,8 @@ class Res(object):
 
     @staticmethod
     def success(data=None, code=ResponseCode.SUCCESS, msg=ResponseMessage.SUCCESS):
-        Res.response(data, code, msg)
+        return Res.response(data, code, msg)
 
     @staticmethod
     def fail(data=None, code=ResponseCode.FAIL, msg=ResponseMessage.FAIL):
-        Res.response(data, code, msg)
+        return Res.response(data, code, msg)
