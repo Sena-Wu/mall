@@ -1,23 +1,29 @@
 # -*- coding:utf-8 -*-
 # Author:wu
+import os
 
 from flask import Flask
 
+from .utils.conf import read_yaml
 from .utils.jsonencoder import CustomJSONEncoder
 from .utils.result import Res
 
 
-def create_app():
+def create_app(env=None):
     from . import db, account, order, commodity
     app = Flask(__name__)
 
+    # 读取配置文件
+    pwd = os.getcwd()
+    if not env:
+        config_path = os.path.join(pwd, 'conf{}dev.yaml'.format(os.sep))
+    else:
+        config_path = os.path.join(pwd, 'conf{}{}.yaml'.format(os.sep, env))
+
+    conf = read_yaml(config_path)
+    app.config.update(conf)
     # 替换默认的json编码器
     app.json_encoder = CustomJSONEncoder
-
-    # 修改app配置
-    app.config['ENV'] = 'development'
-
-    # app.config.update(ENV='development', SECRET_KEY=b'_5#y2L"F4Q8z\n\xec]/')
 
     # 处理404异常
     @app.errorhandler(404)
