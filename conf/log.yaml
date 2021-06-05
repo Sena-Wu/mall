@@ -33,7 +33,7 @@ handlers:
     encoding: utf8
 
 
-# 启用handler
+#日志器，接管handler
 root:
   level: INFO
   handlers: [console,info_file_handler,error_file_handler]

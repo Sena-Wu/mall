@@ -22,7 +22,7 @@ def get_log_config(config_name=None):
 
 def get_env_config(config_name=None):
     """
-    读取配置信息
+    读取env配置信息
     :param config_name:运行模式 - dev - test - prod
     """
     if not config_name:
