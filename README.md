@@ -368,13 +368,19 @@ tree -L 3 -I "__pycache__|venv" > README.md
 
 ### 启动方式
 
-1. 打开terminal，使用命令行运行：
+1. 打开terminal，使用命令行运行(推荐)
 
-   ```shell
-   set FLASK_APP=app.py
-   set FLASK_ENV=development # 可选development、production
-   flask run --host '127.0.0.1' --port 8080 --debug True
-   ```
+```shell
+python app.py
+```
 
-2. 直接用 pycharm 启动
+2. 打开terminal，使用命令行运行：
+
+```shell
+set FLASK_APP=app.py
+set FLASK_ENV=development # 可选development、production
+flask run --host '127.0.0.1' --port 8080 --debug True
+```
+
+3. 直接用 pycharm 启动(此方式可能出现代码自定义配置不生效，需在Edit Configurations中添加自定义配置)
 
