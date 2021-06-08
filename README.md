@@ -331,7 +331,7 @@ class Res(object):
 ### 导出requirements.txt
 
 ```shell
-python freeze > requirements.txt
+pip freeze > requirements.txt
 ```
 
 ### git 提交规范
