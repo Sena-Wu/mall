@@ -25,9 +25,6 @@ class CustomJSONEncoder(JSONEncoder):  # 视图会自动将dict转换为JSON，�
         elif isinstance(obj, decimal.Decimal):
             # 格式化Decimal
             return float(obj)
-        elif isinstance(obj, Rule):  # "url": request.url_rule
-            # return repr(obj)  # "<Rule '/accounts/<account_id>' (HEAD, GET, OPTIONS) -> account.get_account>"
-            return str(obj)  # "/accounts/<account_id>"
         elif isinstance(obj, uuid.UUID):
             # 格式化uuid
             return str(obj)
