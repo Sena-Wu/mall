@@ -28,8 +28,7 @@ mall
 |   |-- log.yaml #logging配置
 |   |-- prod.yaml #prod环境配置
 |   `-- test.yaml #test环境配置
-|-- doc 
-|   |-- other.md 
+|-- doc  
 |   `-- requirement.md 需求文档
 |-- logs 日志
 |   |-- errors.log 错误日志
@@ -368,19 +367,42 @@ tree -L 3 -I "__pycache__|venv" > README.md
 
 ### 启动方式
 
-1. 打开terminal，使用命令行运行(推荐)
+ 1. 运用manager = flask_script.Manager(app) 接管app后，打开terminal,使用命令行运行
 
-```shell
-python app.py
-```
+     1. 启动服务
 
-2. 打开terminal，使用命令行运行：
+        ```shell
+        python app.py runserver
+        ```
 
-```shell
-set FLASK_APP=app.py
-set FLASK_ENV=development # 可选development、production
-flask run --host '127.0.0.1' --port 8080 --debug True
-```
+     2. 生成合成数据
 
-3. 直接用 pycharm 启动(此方式可能出现代码自定义配置不生效，需在Edit Configurations中添加自定义配置)
+        ```
+        python app.py create_synthetic_data
+        ```
 
+        	3. 查看可用命令及命令用法
+
+        ```shell
+        python app.py
+        ```
+
+	2. 直接app.run()方式
+
+        	1. 打开terminal，使用命令行运行(推荐)
+
+    ```shell
+    python app.py
+    ```
+
+    2. 打开terminal，使用命令行运行：
+
+    ```shell
+    set FLASK_APP=app.py
+    set FLASK_ENV=development # 可选development、production
+    flask run --host '127.0.0.1' --port 8080 --debug True
+    ```
+
+    3. 直接用 pycharm 启动(此方式可能出现代码自定义配置不生效，需在Edit Configurations中添加自定义配置)
+
+    
