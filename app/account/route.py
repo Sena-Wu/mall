@@ -12,7 +12,6 @@ from app.utils.result import Res
 from app.utils.generate_random import random_str
 from datetime import datetime, date
 
-alphabet = 'abcdefghijklmnopqrstuvwxyz!@#$%^&*()0123456789'
 logger = logging.getLogger("root")  # 创建日志实例
 
 
