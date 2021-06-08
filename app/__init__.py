@@ -4,24 +4,31 @@
 import logging.config
 
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 
+from .utils.error_class import Insert_Error
 from .utils.get_conf import get_env_config, get_log_config
 from .utils.jsonencoder import CustomJSONEncoder
 from .utils.result import Res
 
 
-def create_app(env=None):
-    from . import db, account, order, commodity
-    app = Flask(__name__)
+db = SQLAlchemy()  # 先创建，方便其他模块引入
 
+def create_app():
+
+    app = Flask(__name__)
+    from . import account, order, commodity
     # 日志设置
     log_conf = get_log_config()
     logging.config.dictConfig(log_conf)
     logger = logging.getLogger('root')
 
-    # 读取配置文件
+    # app配置
     env_conf = get_env_config()
     app.config.update(env_conf)
+
+    # 数据库配置
+    SQLAlchemy(app=app)
 
     # 替换默认的json编码器
     app.json_encoder = CustomJSONEncoder
@@ -37,6 +44,11 @@ def create_app(env=None):
     def framework_error(e):
         logger.error(e)
         return Res.fail("server error")
+
+    @app.errorhandler(Insert_Error)
+    def insert_error(e):
+        logger.error(e)
+        return Res.fail("insert error")
 
     app.register_blueprint(account.account)
     app.register_blueprint(commodity.commodity)
