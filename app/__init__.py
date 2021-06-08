@@ -3,7 +3,7 @@
 
 import logging.config
 
-from flask import Flask
+from flask import Flask,g
 from flask_sqlalchemy import SQLAlchemy
 
 from .utils.error_class import Insert_Error
@@ -11,12 +11,12 @@ from .utils.get_conf import get_env_config, get_log_config
 from .utils.jsonencoder import CustomJSONEncoder
 from .utils.result import Res
 
-
-db = SQLAlchemy()  # 先创建，方便其他模块引入
+db = SQLAlchemy()
+app = Flask(__name__)
 
 def create_app():
 
-    app = Flask(__name__)
+
     from . import account, order, commodity
     # 日志设置
     log_conf = get_log_config()
@@ -28,7 +28,7 @@ def create_app():
     app.config.update(env_conf)
 
     # 数据库配置
-    SQLAlchemy(app=app)
+    db.init_app(app=app)
 
     # 替换默认的json编码器
     app.json_encoder = CustomJSONEncoder
