@@ -72,7 +72,7 @@ mall
 
    ```JSON
    {
-       "code": 0,
+       "code": 1,
        "data": {
            "account_name": "嘤嘤",
            "id": 2
@@ -85,7 +85,7 @@ mall
 
    ```json
    {
-       "code": 0,
+       "code": 1,
        "data": {},
        "msg": "成功"
    }
