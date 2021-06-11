@@ -19,9 +19,16 @@ mall
 |   |   `-- __init__.py
 |   `-- utils 工具类
 |       |-- __init__.py
+|       |-- error_class.py 自定义InsertError等
+|       |-- generate_random.py 
 |       |-- get_conf.py 获取配置文件信息
 |       |-- jsonencoder.py 重新定义JSONENCODER
 |       `-- result.py 响应类
+|-- tests 测试模块
+|   |-- __init__.py 
+|   |-- conftest.py 暂无
+|   |-- test_create_db_data.py 生成批量合成数据写入数据库
+|   |`-- test_setup.py 暂无
 |-- app.py 启动文件
 |-- conf 配置文件
 |   |-- dev.yaml #dev环境配置
@@ -38,6 +45,63 @@ mall
 ```
 
 ## Web模块
+
+### 请求返回格式说明
+
+1. server内部异常，如代码中出现a = 4/0导致报错等
+
+   ```json
+   {
+       "code": 0,
+       "data": "server error",
+       "msg": "失败"
+   }
+   ```
+
+2. 404 异常
+
+   ```json
+   {
+       "code": 0,
+       "data": 404,
+       "msg": "失败"
+   }
+   ```
+
+3. 请求并操作成功，返回被操作数据简要信息
+
+   ```JSON
+   {
+       "code": 0,
+       "data": {
+           "account_name": "嘤嘤",
+           "id": 2
+       },
+       "msg": "成功"
+   }
+   ```
+
+4. 请求成功但数据库查无此人
+
+   ```json
+   {
+       "code": 0,
+       "data": {},
+       "msg": "成功"
+   }
+   ```
+
+5. 请求成功但数据库写入失败,data部分提示"insert error"或"update error"或"delete error"
+
+   ```json
+   {
+       "code": 0,
+       "data": "insert error",
+       "msg": "失败"
+   }
+   ```
+
+   
 
 ### restful
 
@@ -301,6 +365,7 @@ class ResponseCode(object):
 class ResponseMessage(object):
     SUCCESS = "成功"
     FAIL = "失败"
+    BAD_REQUEST = "Bad Request"
 
 
 class Res(object):
@@ -367,29 +432,9 @@ tree -L 3 -I "__pycache__|venv" > README.md
 
 ### 启动方式
 
- 1. 运用manager = flask_script.Manager(app) 接管app后，打开terminal,使用命令行运行
+ 1. 直接app.run()方式
 
-     1. 启动服务
-
-        ```shell
-        python app.py runserver
-        ```
-
-     2. 生成合成数据
-
-        ```
-        python app.py create_synthetic_data
-        ```
-
-        	3. 查看可用命令及命令用法
-
-        ```shell
-        python app.py
-        ```
-
-	2. 直接app.run()方式
-
-        	1. 打开terminal，使用命令行运行(推荐)
+    1. 打开terminal，使用命令行运行(推荐)
 
     ```shell
     python app.py
@@ -405,4 +450,19 @@ tree -L 3 -I "__pycache__|venv" > README.md
 
     3. 直接用 pycharm 启动(此方式可能出现代码自定义配置不生效，需在Edit Configurations中添加自定义配置)
 
-    
+ 2. 运用manager = flask_script.Manager(app) 接管app后，打开terminal,使用命令行运行
+
+     1. 启动服务
+
+        ```shell
+        python app.py runserver
+        ```
+
+     2. 查看可用命令及命令用法
+
+        ```shell
+        python app.py
+        ```
+
+
+     

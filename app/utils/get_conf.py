@@ -35,8 +35,9 @@ def read_yaml(config_name):
     读取配置文件
     :param config_name:配置文件名
     """
-    pwd = os.getcwd()  # D:\Active\Projects_python\mall\
+    pwd = os.getcwd()
     config_path = os.path.join(pwd, 'conf{}{}.yaml'.format(os.sep, config_name))
+    # config_path = 'D:/Active/Projects_python/mall/conf/log.yaml'
 
     logger.info("read config:{}".format(config_path))
     try:

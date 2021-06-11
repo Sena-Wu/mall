@@ -10,6 +10,7 @@ class ResponseCode(object):
 class ResponseMessage(object):
     SUCCESS = "成功"
     FAIL = "失败"
+    BAD_REQUEST = "Bad Request"
 
 
 class Res(object):

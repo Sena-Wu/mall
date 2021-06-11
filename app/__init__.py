@@ -3,10 +3,10 @@
 
 import logging.config
 
-from flask import Flask,g
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
-from .utils.error_class import Insert_Error
+from .utils.error_class import InsertError, UpdateError, DeleteError
 from .utils.get_conf import get_env_config, get_log_config
 from .utils.jsonencoder import CustomJSONEncoder
 from .utils.result import Res
@@ -14,9 +14,8 @@ from .utils.result import Res
 db = SQLAlchemy()
 app = Flask(__name__)
 
+
 def create_app():
-
-
     from . import account, order, commodity
     # 日志设置
     log_conf = get_log_config()
@@ -45,10 +44,20 @@ def create_app():
         logger.error(e)
         return Res.fail("server error")
 
-    @app.errorhandler(Insert_Error)
+    @app.errorhandler(InsertError)
     def insert_error(e):
         logger.error(e)
         return Res.fail("insert error")
+
+    @app.errorhandler(UpdateError)
+    def insert_error(e):
+        logger.error(e)
+        return Res.fail("update error")
+
+    @app.errorhandler(DeleteError)
+    def insert_error(e):
+        logger.error(e)
+        return Res.fail("delete error")
 
     app.register_blueprint(account.account)
     app.register_blueprint(commodity.commodity)
