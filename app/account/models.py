@@ -1,13 +1,10 @@
 # -*- coding:utf-8 -*-
 # Author:wu
 
-from datetime import datetime
-
 from .. import db
-from ..utils.error_class import Insert_Error
+from ..utils.error_class import InsertError, UpdateError, DeleteError
 
 
-# noinspection SpellCheckingInspection
 class Account(db.Model):
     # 声明表名
     __tablename__ = 'account_tb'
@@ -24,25 +21,22 @@ class Account(db.Model):
     update_time = db.Column(db.DateTime())
 
 
-def get_by_id(account_id: int) -> list:
+def get_by_id(account_id: int) -> dict:
     """
     根据id获取账户
     :param account_id: 账户id
     :return: 账户信息
     """
-    acc_list = []
     query = Account.query
     acc = query.filter(Account.id == account_id).with_entities(Account.id, Account.account_name).first()
 
-    if acc:
-        acc_list.append({
-            "id": acc.id,
-            "account_name": acc.account_name
-        })
-    return acc_list
+    return {
+        "id": acc.id,
+        "account_name": acc.account_name
+    }
 
 
-def list_by_params(params: dict) -> list:
+def get_by_params(params: dict) -> list:
     """
     分页查询账户数据
     :param params: 查询参数
@@ -65,23 +59,91 @@ def list_by_params(params: dict) -> list:
     return acc_list
 
 
-def add_by_params(params: dict) -> list:
-    acc_list = []
-    params['create_time'] = params['update_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+def add_by_params(params: dict) -> dict:
+    """
+    添加用户
+    :param params: 预处理好的新用户信息
+    :return:
+    """
     acc = Account(**params)
-
-    db.session.add(acc)
     try:
-        db.session.commit()
+        db.session.add(acc)
+        db.session.commit()  # 写数据库
     except Exception as e:
-        db.session.rollback()
-        raise Insert_Error(e)
+        raise InsertError(e)
 
-    acc_list.append({
+    return {
         "id": acc.id,
         "account_name": acc.account_name
-    })
-    return acc_list
+    }
 
-def update_by_params(params: dict) -> list:
-    pass
+
+def update_by_params(params: dict) -> dict:
+    """
+    更新用户信息
+    :param params: 预处理好的用户信息
+    :return:
+    """
+    query = Account.query
+    acc = query.get(params['id'])
+    if acc:
+        for attr, value in params.items():
+            setattr(acc, attr, value)  # 动态更改Account属性值
+        try:
+            db.session.commit()  # 写数据库
+        except Exception as e:
+            db.session.rollback()
+            raise UpdateError(e)
+
+        return {
+            "id": acc.id,
+            "account_name": acc.account_name
+        }
+    return {}
+
+
+def delete_by_id(account_id: int) -> dict:
+    """
+    通过id删除用户
+    :param account_id: 用户id
+    :return:
+    """
+    query = Account.query
+    acc = query.get(account_id)
+
+    if acc:
+        try:
+            db.session.delete(acc)
+            db.session.commit()  # 写数据库
+        except Exception as e:
+            db.session.rollback()
+            raise DeleteError(e)
+        return {
+            "id": acc.id,
+            "account_name": acc.account_name
+        }
+    return {}
+
+
+def delete_by_params(params: dict) -> dict:
+    """
+    通过用户名删除用户
+    :param params: 包含用户名的request参数字典
+    :return:
+    """
+    query = Account.query
+    query = query.filter(Account.account_name == params['account_name'])
+    acc = query.first()
+
+    if acc:
+        try:
+            db.session.delete(acc)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            raise DeleteError(e)
+        return {
+            "id": acc.id,
+            "account_name": acc.account_name
+        }
+    return {}

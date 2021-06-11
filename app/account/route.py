@@ -2,21 +2,22 @@
 # Author:wu
 
 import logging
-import random
+from datetime import datetime, date
 
 from flask import request
 
 from app.account import account
-from app.account.models import get_by_id, list_by_params, add_by_params, update_by_params
-from app.utils.result import Res
+from app.account.models import get_by_id, get_by_params, add_by_params, update_by_params, delete_by_id, delete_by_params
 from app.utils.generate_random import random_str
-from datetime import datetime, date
+from app.utils.result import Res, ResponseMessage
+from .models import Account
 
 logger = logging.getLogger("root")  # 创建日志实例
 
 
 @account.route(rule='/<int:account_id>', methods=['GET'])
 def get_account(account_id: int):
+
     data = get_by_id(account_id)
     return Res.success(data=data)
 
@@ -32,14 +33,13 @@ def list_account():
         "order_type": req_data.get('order_type', "desc"),
     }
 
-    data = list_by_params(params)
+    data = get_by_params(params)
     return Res.success(data=data)
 
 
 @account.route(rule='/', methods=['POST'])
 def add_account():
     account_name = random_str(10)
-    # account_name = ''
     req_data = request.args
     params = {
         'account_name': req_data.get('account_name', account_name),
@@ -60,17 +60,30 @@ def add_account():
 @account.route(rule='/', methods=['PUT'])
 def update_account():
     req_data = request.args
-    if req_data['id'] or req_data['account_name']:
-        params = req_data
-        data = update_by_params(params)
 
+    if not req_data.get('id', 0):
+        return Res.fail(ResponseMessage.BAD_REQUEST)
+    params = {}
+    for attr, value in req_data.items():
+        if attr in Account.__dict__.keys():
+            params[attr] = value
+
+    data = update_by_params(params)
     return Res.success(data)
 
 
-@account.route(rule='/<account_id>', methods=['DELETE'])
-def delete_account():
-    data = {
-        "url": request.full_path,
-        "methods": request.method
-    }
+@account.route(rule='/<int:account_id>', methods=['DELETE'])
+def delete_account(account_id):
+
+    data = delete_by_id(account_id)
+    return Res.success(data)
+
+
+@account.route(rule='/', methods=['DELETE'])
+def delete_account_by_params():
+    req_data = request.args
+    if not req_data.get('account_name', 0):
+        return Res.fail(ResponseMessage.BAD_REQUEST)
+
+    data = delete_by_params(req_data)
     return Res.success(data)
