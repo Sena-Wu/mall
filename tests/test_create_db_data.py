@@ -52,3 +52,4 @@ def test_create_db_data():
 
 if __name__ == '__main__':
     pytest.main(['-vs', 'test_create_db_data.py::test_create_db_data'])
+
