@@ -33,3 +33,4 @@ class Res(object):
     @staticmethod
     def fail(data=None, code=ResponseCode.FAIL, msg=ResponseMessage.FAIL):
         return Res.response(data, code, msg)
+
