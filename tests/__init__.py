@@ -8,3 +8,4 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:971211@127.0.0.1:3
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy()
 db.init_app(app=app)
+
