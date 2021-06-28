@@ -61,5 +61,6 @@ def create_app():
 
     app.register_blueprint(account.account)
     app.register_blueprint(commodity.commodity)
+    app.register_blueprint(order.order)
 
     return app
