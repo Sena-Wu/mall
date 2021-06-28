@@ -2,6 +2,6 @@
 # Author:wu
 from flask import Blueprint
 
-commodity = Blueprint('commodity', __name__)
+commodity = Blueprint('commodity', __name__, url_prefix='/commodity')
 
 from . import route
