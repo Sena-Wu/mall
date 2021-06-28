@@ -2,7 +2,7 @@
 
 ## 目录结构
 
-```
+```scheme
 mall
 |-- README.md 项目描述
 |-- app 业务代码
@@ -28,7 +28,7 @@ mall
 |   |-- __init__.py 
 |   |-- conftest.py 暂无
 |   |-- test_create_db_data.py 生成批量合成数据写入数据库
-|   |`-- test_setup.py 暂无
+|   `-- test_setup.py 暂无
 |-- app.py 启动文件
 |-- conf 配置文件
 |   |-- dev.yaml #dev环境配置
@@ -36,7 +36,11 @@ mall
 |   |-- prod.yaml #prod环境配置
 |   `-- test.yaml #test环境配置
 |-- doc  
-|   `-- requirement.md 需求文档
+|   |-- requirement.md 需求文档
+|   `-- sql  #mysql表结构
+|       |-- account_tb.sql #用户表
+|       |-- commodity_tb.sql #商品表
+|       `-- order_tb.sql #订单表
 |-- logs 日志
 |   |-- errors.log 错误日志
 |   `-- info.log 普通日志
@@ -46,13 +50,13 @@ mall
 
 ## Web模块
 
-### 请求返回格式说明
+### 请求返回格式说明(以用户模块为例)
 
 1. server内部异常，如代码中出现a = 4/0导致报错等
 
    ```json
    {
-       "code": 0,
+       "code": -1,
        "data": "server error",
        "msg": "失败"
    }
@@ -62,17 +66,29 @@ mall
 
    ```json
    {
-       "code": 0,
+       "code": -1,
        "data": 404,
        "msg": "失败"
    }
    ```
 
-3. 请求并操作成功，返回被操作数据简要信息
+3. 缺失关键参数，请求失败
+
+   ```json
+   {
+       "code": -1,
+       "data": "Bad Request",
+       "msg": "失败"
+   }
+   ```
+   
+   
+   
+4. 请求并操作成功，返回被操作数据简要信息
 
    ```JSON
    {
-       "code": 1,
+       "code": 0,
        "data": {
            "account_name": "嘤嘤",
            "id": 2
@@ -81,21 +97,21 @@ mall
    }
    ```
 
-4. 请求成功但数据库查无此人
+5. 请求成功但数据库查无此人
 
    ```json
    {
-       "code": 1,
+       "code": 0,
        "data": {},
        "msg": "成功"
    }
    ```
 
-5. 请求成功但数据库写入失败,data部分提示"insert error"或"update error"或"delete error"
+6. 请求成功但数据库写入失败,data部分提示"insert error"或"update error"或"delete error"
 
    ```json
    {
-       "code": 0,
+       "code": -1,
        "data": "insert error",
        "msg": "失败"
    }
@@ -421,9 +437,15 @@ type 有如下几种情况：
 
 ### git 打印项目目录结构
 
-```
+```shell
 #3级目录，忽略__pycache__、venv文件夹,输出到README.md
 tree -L 3 -I "__pycache__|venv" > README.md
+```
+
+常用：
+
+```shell
+tree -L 3 -I "__pycache__|venv"
 ```
 
 更多资料：
