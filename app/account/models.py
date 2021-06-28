@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 # Author:wu
+from datetime import datetime
 
 from .. import db
 from ..utils.error_class import InsertError, UpdateError, DeleteError
@@ -23,9 +24,9 @@ class Account(db.Model):
 
 def get_by_id(account_id: int) -> dict:
     """
-    根据id获取账户
-    :param account_id: 账户id
-    :return: 账户信息
+    根据id获取用户
+    :param account_id: 用户id
+    :return: 用户信息
     """
     query = Account.query
     acc = query.filter(Account.id == account_id).with_entities(Account.id, Account.account_name).first()
@@ -38,7 +39,7 @@ def get_by_id(account_id: int) -> dict:
 
 def get_by_params(params: dict) -> list:
     """
-    分页查询账户数据
+    分页查询用户数据
     :param params: 查询参数
     :return: 分页列表
     """
@@ -65,10 +66,11 @@ def add_by_params(params: dict) -> dict:
     :param params: 预处理好的新用户信息
     :return:
     """
+
     acc = Account(**params)
     try:
         db.session.add(acc)
-        db.session.commit()  # 写数据库
+        db.session.commit()  # 写数据库 你来debug一下
     except Exception as e:
         raise InsertError(e)
 
@@ -89,6 +91,7 @@ def update_by_params(params: dict) -> dict:
     if acc:
         for attr, value in params.items():
             setattr(acc, attr, value)  # 动态更改Account属性值
+            acc.update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         try:
             db.session.commit()  # 写数据库
         except Exception as e:
