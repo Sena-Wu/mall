@@ -13,18 +13,20 @@ from .models import Commodity
 
 @commodity.route(rule='/<int:commodity_id>', methods=['GET'])
 def get_commodity(commodity_id):
-
     data = get_by_id(commodity_id)
     return Res.success(data=data)
 
 
 @commodity.route(rule='/', methods=['GET'])
 def list_commodity():
+    peak_price = '999999999.99'
     req_data = request.args
     params = {
         "from": req_data.get('from', 0),
         "size": req_data.get('size', 10),
         "description": req_data.get('description', ''),
+        "floor_price": req_data.get('floor_price', '0'),  # 价格筛选区间
+        "peak_price": req_data.get('peak_price', peak_price),
         "order_value": req_data.get('order_value', "create_time"),
         "order_type": req_data.get('order_type', "desc"),
     }
@@ -39,7 +41,7 @@ def add_commodity():
     req_data = request.args
     params = {
         'price': req_data.get('price', price),
-        'description': req_data.get('description', 'unknown'),
+        'description': req_data.get('description', ''),
         'total_stock': req_data.get('total_stock', 0),
         'available_stock': req_data.get('available_stock', req_data.get('total_stock', 0)),
         'create_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -58,7 +60,7 @@ def update_commodity():
         return Res.fail(ResponseMessage.BAD_REQUEST)
     params = {}
     for attr, value in req_data.items():
-        if attr in Commodity.__dict__.keys():
+        if attr in Commodity.__dict__.keys() - ('update_time', 'create_time'):
             params[attr] = value
 
     data = update_by_params(params)

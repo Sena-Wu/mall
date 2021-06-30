@@ -5,7 +5,6 @@ from datetime import datetime
 from .. import db
 from ..utils.error_class import InsertError, UpdateError, DeleteError
 
-
 class Commodity(db.Model):
     # 声明表名
     __tablename__ = 'commodity_tb'
@@ -47,6 +46,8 @@ def get_by_params(params: dict) -> list:
     comm_list = []
     query = Commodity.query
     query = query.filter(Commodity.description.like('%{}%'.format(params['description'])))
+    query = query.filter(Commodity.price >= params['floor_price'])
+    query = query.filter(Commodity.price <= params['peak_price'])
 
     order_value = Commodity.__dict__.get(params['order_value'])
     order_by = getattr(order_value, params['order_type'])()
