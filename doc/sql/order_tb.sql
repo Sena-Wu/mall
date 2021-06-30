@@ -27,7 +27,7 @@ CREATE TABLE `order_tb` (
   `order_amount` decimal(10,2) NOT NULL COMMENT '订单总金额',
   `addr` varchar(255) NOT NULL COMMENT '收货地址',
   `order_status` tinyint NOT NULL COMMENT '订单状态（0：未支付，1：已支付，2：换货，3：退货）',
-  `creat_time` datetime NOT NULL COMMENT '订单创建时间',
+  `create_time` datetime NOT NULL COMMENT '订单创建时间',
   `payment_time` datetime DEFAULT NULL COMMENT '订单付款时间',
   `close_time` datetime DEFAULT NULL COMMENT '订单成交时间',
   PRIMARY KEY (`id`)
