@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import request
 
 from app.order import order
-from app.order.models import get_by_id, get_by_params, add_by_params, update_by_params, delete_by_id
+from app.order.models import get_by_id, get_by_params, add_by_params, update_by_params, delete_by_id, update_order_status
 from app.utils.result import Res, ResponseMessage
 from .models import Order
 
@@ -40,7 +40,7 @@ def add_order():
         'number': req_data.get('number', 0),
         'order_amount': req_data.get('order_amount', 0),
         'addr': req_data.get('addr', 'unknown'),
-        'order_status': req_data.get('order_status', 0),
+        'order_status': 0,
         'create_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'payment_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'close_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -58,10 +58,21 @@ def update_order():
         return Res.fail(ResponseMessage.BAD_REQUEST)
     params = {}
     for attr, value in req_data.items():
-        if attr in Order.__dict__.keys():
+        if attr in Order.__dict__.keys() - ('close_time', 'create_time', 'payment_time', 'order_status'):
             params[attr] = value
 
     data = update_by_params(params)
+    return Res.success(data)
+
+
+# （0：未支付，1：已支付，2：换货，3：退货）
+@order.route(rule='/<int:order_id>/<int:order_status>', methods=['PUT'])
+def updata_status(order_id, order_status):
+    if not order_status:
+        return Res.fail(ResponseMessage.BAD_REQUEST)
+    params = {'id': order_id, 'order_status': order_status}
+
+    data = update_order_status(params)
     return Res.success(data)
 
 
