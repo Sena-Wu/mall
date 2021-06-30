@@ -47,11 +47,13 @@ def get_by_params(params: dict) -> list:
     query = Account.query
     query = query.filter(Account.account_name.like('%{}%'.format(params['account_name'])))
 
+    all_acc_num = len(query.all())
+    acc_list.append({'all_acc_num': all_acc_num})
+
     order_value = Account.__dict__.get(params['order_value'])
     order_by = getattr(order_value, params['order_type'])()
 
     account_list = query.order_by(order_by).offset(params['from']).limit(params['size']).all()
-
     for acc in account_list:
         acc_list.append({
             "id": acc.id,
@@ -66,16 +68,15 @@ def add_by_params(params: dict) -> dict:
     :param params: 预处理好的新用户信息
     :return:
     """
-
     acc = Account(**params)
     try:
         db.session.add(acc)
-        db.session.commit()  # 写数据库 你来debug一下
+        db.session.commit()  # 写数据库
     except Exception as e:
         raise InsertError(e)
 
     return {
-        "id": acc.id,
+        "id": acc.id,  #
         "account_name": acc.account_name
     }
 
