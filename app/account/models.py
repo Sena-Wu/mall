@@ -92,7 +92,7 @@ def update_by_params(params: dict) -> dict:
     if acc:
         for attr, value in params.items():
             setattr(acc, attr, value)  # 动态更改Account属性值
-            acc.update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        acc.update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         try:
             db.session.commit()  # 写数据库
         except Exception as e:
