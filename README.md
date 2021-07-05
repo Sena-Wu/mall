@@ -24,7 +24,7 @@ mall
 |       |-- get_conf.py 获取配置文件信息
 |       |-- jsonencoder.py 重新定义JSONENCODER
 |       `-- result.py 响应类
-|-- tests 测试模块
+|-- tests 测试模块 (暂无)
 |   |-- __init__.py 
 |   |-- conftest.py 暂无
 |   |-- test_create_db_data.py 生成批量合成数据写入数据库
@@ -37,6 +37,7 @@ mall
 |   `-- test.yaml #test环境配置
 |-- doc  
 |   |-- requirement.md 需求文档
+|   |-- sqlalchemy.md #关于sqlalchemy操作的一些说明
 |   `-- sql  #mysql表结构
 |       |-- account_tb.sql #用户表
 |       |-- commodity_tb.sql #商品表
@@ -72,7 +73,7 @@ mall
    }
    ```
 
-3. 缺失关键参数，请求失败
+3. 关键参数缺失或格式错误，请求失败
 
    ```json
    {
