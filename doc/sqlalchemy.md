@@ -102,8 +102,8 @@ session.execute(text("select * from account_tb where account_name='wwq'")).first
 2237170
 ```
 
-- 未commit之前，该事务内的数据不会被其他事务读取
-- primary key编号接续之前INSERT语句所占用的编号
+- 未commit之前，该事务内的数据不会被其他事务读取 （数据库知识点，隔离级别）
+- primary key编号接续之前INSERT语句所占用的编号（数据库知识点，自增锁）
 
 ### flush过程
 
@@ -200,6 +200,12 @@ https://juejin.cn/post/6844904164141580302
 
 数据查询：其他查询方法不一一举例
 
+参考：
+
+https://docs.sqlalchemy.org/en/14/orm/query.html?highlight=update#the-query-object 
+
+https://docs.sqlalchemy.org/en/14/orm/queryguide.html#select-statements
+
 ```python
 wwq = session.query(Account).filter_by(account_name='wwq').first()
 #wwq: <Account 2237171>
@@ -216,6 +222,15 @@ type(wwq) #<class 'sqlalchemy.engine.row.Row'>
 session.execute(text("select * from account_tb where account_name='wwq'")).first()
 #wwq: (2237171, 'wwq', ... ,datetime.datetime(2021, 6, 29, 20, 31, 28))
 type(wwq) #<class 'sqlalchemy.engine.row.Row'>  
+
+stmt = select(Account).where(Account.id < 5)
+now = session.execute(stmt)
+#now: <sqlalchemy.engine.result.ChunkedIteratorResult object at 0x00000145145B5F48>
+type(now) #<class 'sqlalchemy.engine.result.ChunkedIteratorResult'>
+type(now.fetchone()) #<class 'sqlalchemy.engine.row.Row'>
+#now.fetchone(): (<Account 1>,) 以字典的方式读取，只有'Account'一个key
+type(now.fetchall()) #<class 'list'>
+#now.fetchall(): [(<Account 1>,), (<Account 2>,), (<Account 3>,), (<Account 4>,)]
 ```
 
 <class 'app.account.models.Account'> 以属性方式直接查看、更改属性值 wwq.account_name = 'wwj'
@@ -233,16 +248,28 @@ type(wwq) # <class 'sqlalchemy.engine.row.Row'>
 
 select操作是可以不需要commit的，因为他并没有对数据库做出任何的更改数据的操作
 
-## Session.update()
+## .update()
 
 更新数据：
 
+参考：
+
+https://docs.sqlalchemy.org/en/14/orm/query.html?highlight=update#sqlalchemy.orm.Query.update
+
+https://docs.sqlalchemy.org/en/14/orm/session_basics.html#update-and-delete-with-arbitrary-where-clause
+
 ```python
-wwq.account_name = 'wwj' #直接修改对象属性
-# 或
-wwj = session.query(Account).filter_by(account_name='wwq').\
-update({'account_name':'wwj'}).first()
-# wwj与wwq是同一个对象，因为他们在数据库中对应同一行数据(主键相同)
+wwq.account_name = 'wwj' #直接修改对象属性，需要先查询得到wwq，再修改
+
+# 直接构造一个update语句并执行，返回影响的行数
+session.query(Account).filter_by(account_name='wwq').update({'account_name':'wwj'})
+
+from sqlalchemy import update
+#构造SQL 也可以手动构造:stmt = 'update account_tb set account_name = "jiji" where id = 1'
+stmt = update(Account).where(Account.id == 2).values(sex=0)
+#执行SQL
+result = session.execute(stmt) # <class 'sqlalchemy.engine.cursor.CursorResult'>
+
 ```
 
 然后通过查询或flush或commit触发与数据库交互，**向数据库发出UPDATE语句**，与数据库交互
@@ -263,10 +290,20 @@ IdentitySet([<Account 2237169>])
 IdentitySet([])
 ```
 
-## Session.delete()
+## .delete()
 
 ```python
-Session.delete(wwq)
+session.delete(wwq) #使用把对象加入delete中，等下一次flush()在数据库中删除对象所对应的行
+
+# 直接构造一个update语句并执行，返回影响的行数
+session.query(Account).filter_by(account_name='wwq').delete()
+
+from sqlalchemy import delete
+#构造SQL 也可以手动构造:stmt = 'delete account_tb where id = 1'
+stmt = delete(Account).where(Account.id == 2)
+#执行SQL
+result = session.execute(stmt) # <class 'sqlalchemy.engine.cursor.CursorResult'>
+
 ```
 
 然后通过查询或flush或commit触发与数据库交互，**向数据库发出DELETE语句**，与数据库交互
