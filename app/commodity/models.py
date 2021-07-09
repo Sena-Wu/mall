@@ -1,9 +1,11 @@
 # -*- coding:utf-8 -*-
 # Author:wu
 from datetime import datetime
+from math import ceil
 
 from .. import db
 from ..utils.error_class import InsertError, UpdateError, DeleteError
+
 
 class Commodity(db.Model):
     # 声明表名
@@ -18,7 +20,6 @@ class Commodity(db.Model):
     update_time = db.Column(db.DateTime())
 
 
-
 def get_by_id(commodity_id: int) -> dict:
     """
     根据id获取商品
@@ -26,8 +27,9 @@ def get_by_id(commodity_id: int) -> dict:
     :return: 商品信息
     """
     query = Commodity.query
-    comm = query.filter(Commodity.id == commodity_id).with_entities(Commodity.id, 
-                Commodity.price, Commodity.description, Commodity.available_stock).first()
+    comm = query.filter(Commodity.id == commodity_id).with_entities(Commodity.id,
+                                                                    Commodity.price, Commodity.description,
+                                                                    Commodity.available_stock).first()
 
     return {
         "id": comm.id,
@@ -43,24 +45,40 @@ def get_by_params(params: dict) -> list:
     :param params: 查询参数
     :return: 分页列表
     """
-    comm_list = []
+    comm_list = {
+        'commodities': [],
+        'page': 1,
+        'size': 0,
+        'total': 0
+    }
     query = Commodity.query
     query = query.filter(Commodity.description.like('%{}%'.format(params['description'])))
     query = query.filter(Commodity.price >= params['floor_price'])
     query = query.filter(Commodity.price <= params['peak_price'])
 
+    count = len(query.all())
+    if not count:
+        return comm_list
+
+    comm_list['total'] = count
+    last_page = ceil(count / params['size'])
+    params['page'] = last_page if params['page'] > last_page else params['page']
+    comm_list['page'] = params['page']
+
     order_value = Commodity.__dict__.get(params['order_value'])
     order_by = getattr(order_value, params['order_type'])()
 
-    commodity_list = query.order_by(order_by).offset(params['from']).limit(params['size']).all()
+    offset = params['from'] + (params['page'] - 1) * params['size']
+    commodity_list = query.order_by(order_by).offset(offset).limit(params['size']).all()
 
     for comm in commodity_list:
-        comm_list.append({
+        comm_list['commodities'].append({
             "id": comm.id,
             "price": comm.price,
             "description": comm.description,
             "available_stock": comm.available_stock
         })
+    comm_list['size'] = len(commodity_list)
     return comm_list
 
 
@@ -88,21 +106,32 @@ def add_by_params(params: dict) -> dict:
 def update_by_params(params: dict) -> dict:
     """
     更新商品信息
-    :param params: 预处理好的商品信息
+    :param params: 预处理好的待更新商品信息
     :return:
     """
-    query = Commodity.query
-    comm = query.get(params['id'])
-    if comm:
-        for attr, value in params.items():
-            setattr(comm, attr, value)  # 动态更改Commodity属性值
-            comm.update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        try:
-            db.session.commit()  # 写数据库
-        except Exception as e:
-            db.session.rollback()
-            raise UpdateError(e)
+    id = params.pop('id')
+    params['update_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # update = 'UPDATE commodity_tb SET '
+    # where = ' WHERE commodity_tb.id = ' + id
+    #
+    # for item in params.items():
+    #     params[item[0]] = '"' + item[1] + '"' if isinstance(item[1], str) else str(item[1])
+    # condition = ' ,'.join([' = '.join(item) for item in params.items()])
+    #
+    # sql = update + condition + where
 
+    try:
+        Commodity.query.filter(Commodity.id == id).update(params)
+        # db.session.execute(sql)
+        db.session.commit()  # 写数据库
+
+    except Exception as e:
+        db.session.rollback()
+        raise UpdateError(e)
+
+    comm = Commodity.query.get(id)
+
+    if comm:
         return {
             "id": comm.id,
             "price": comm.price,

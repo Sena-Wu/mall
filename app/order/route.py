@@ -5,7 +5,8 @@ from datetime import datetime
 from flask import request
 
 from app.order import order
-from app.order.models import get_by_id, get_by_params, add_by_params, update_by_params, delete_by_id, update_order_status
+from app.order.models import get_by_id, get_by_params, add_by_params, update_by_params, delete_by_id, \
+    pay_by_id
 from app.utils.result import Res, ResponseMessage
 from .models import Order
 
@@ -22,6 +23,7 @@ def list_order():
     params = {
         "from": req_data.get('from', 0),
         "size": req_data.get('size', 10),
+        "page": req_data.get('page',1),
         "order_description": req_data.get('order_description', ''),
         "order_value": req_data.get('order_value', "create_time"),
         "order_type": req_data.get('order_type', "desc"),
@@ -58,7 +60,7 @@ def update_order():
         return Res.fail(ResponseMessage.BAD_REQUEST)
     params = {}
     for attr, value in req_data.items():
-        if attr in Order.__dict__.keys() - ('close_time', 'create_time', 'payment_time', 'order_status'):
+        if attr in Order.__dict__.keys() - ('id', 'close_time', 'create_time', 'payment_time', 'order_status'):
             params[attr] = value
 
     data = update_by_params(params)
@@ -66,17 +68,19 @@ def update_order():
 
 
 # （0：未支付，1：已支付，2：换货，3：退货）
-@order.route(rule='/<int:order_id>/<int:order_status>', methods=['PUT'])
-def updata_status(order_id, order_status):
-    if not order_status:
+@order.route(rule='/<int:order_id>', methods=['PUT'])
+def pay_order(order_id):
+    # 这里不是这样的，应该要对用用户的操作
+    # 那你就直接改成支付接口，名字不要取update_status 应该叫支付
+    if not order_id:
         return Res.fail(ResponseMessage.BAD_REQUEST)
-    params = {'id': order_id, 'order_status': order_status}
 
-    data = update_order_status(params)
+    data = pay_by_id(order_id)
     return Res.success(data)
 
 
 @order.route(rule='/<int:order_id>', methods=['DELETE'])
 def delete_order(order_id):
+
     data = delete_by_id(order_id)
     return Res.success(data)

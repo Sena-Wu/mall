@@ -26,11 +26,12 @@ def get_account(account_id: int):
 def list_account():
     req_data = request.args
     params = {
-        "from": req_data.get('from', 0),
-        "size": req_data.get('size', 10),
-        "account_name": req_data.get('account_name', ''),
-        "order_value": req_data.get('order_value', "create_time"),
-        "order_type": req_data.get('order_type', "desc"),
+        "from": req_data.get('from', 0, type=int),
+        "size": req_data.get('size', 10, type=int),
+        "page": req_data.get('page', 1, type=int),
+        "account_name": req_data.get('account_name', '', type=str),
+        "order_value": req_data.get('order_value', "create_time", type=str),
+        "order_type": req_data.get('order_type', "desc", type=str),
     }
 
     data = get_by_params(params)
@@ -65,7 +66,7 @@ def update_account():
         return Res.fail(ResponseMessage.BAD_REQUEST)
     params = {}
     for attr, value in req_data.items():
-        if attr in Account.__dict__.keys():
+        if attr in Account.__dict__.keys() - ('id', 'create_time', 'update_time'):
             params[attr] = value
 
     data = update_by_params(params)

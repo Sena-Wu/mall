@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 # Author:wu
 from datetime import datetime
+from math import ceil
 
 from .. import db
 from ..utils.error_class import InsertError, UpdateError, DeleteError
@@ -37,28 +38,44 @@ def get_by_id(account_id: int) -> dict:
     }
 
 
-def get_by_params(params: dict) -> list:
+def get_by_params(params: dict) -> dict:
     """
     分页查询用户数据
     :param params: 查询参数
     :return: 分页列表
     """
-    acc_list = []
+
+    acc_list = {
+        'accounts': [],
+        'page': 1,
+        'size': 0,
+        'total': 0
+    }
     query = Account.query
     query = query.filter(Account.account_name.like('%{}%'.format(params['account_name'])))
 
-    all_acc_num = len(query.all())
-    acc_list.append({'all_acc_num': all_acc_num})
+    count = len(query.all())
+    if not count:
+        return acc_list
+
+    acc_list['total'] = count
+    last_page = ceil(count / params['size'])
+    params['page'] = last_page if params['page'] > last_page else params['page']
+    acc_list['page'] = params['page']
 
     order_value = Account.__dict__.get(params['order_value'])
     order_by = getattr(order_value, params['order_type'])()
 
-    account_list = query.order_by(order_by).offset(params['from']).limit(params['size']).all()
+    # todo 分页查询优化一下：覆盖索引 + 延迟关联（子查询）
+    offset = params['from'] + (params['page'] - 1) * params['size']
+    account_list = query.order_by(order_by).offset(offset).limit(params['size']).all()
+
     for acc in account_list:
-        acc_list.append({
+        acc_list['accounts'].append({
             "id": acc.id,
             "account_name": acc.account_name
         })
+    acc_list['size'] = len(account_list)
     return acc_list
 
 
@@ -76,7 +93,7 @@ def add_by_params(params: dict) -> dict:
         raise InsertError(e)
 
     return {
-        "id": acc.id,  #
+        "id": acc.id,
         "account_name": acc.account_name
     }
 
@@ -87,18 +104,28 @@ def update_by_params(params: dict) -> dict:
     :param params: 预处理好的用户信息
     :return:
     """
-    query = Account.query
-    acc = query.get(params['id'])
-    if acc:
-        for attr, value in params.items():
-            setattr(acc, attr, value)  # 动态更改Account属性值
-        acc.update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        try:
-            db.session.commit()  # 写数据库
-        except Exception as e:
-            db.session.rollback()
-            raise UpdateError(e)
+    id = params.pop('id')
+    params['update_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # update = 'UPDATE account_tb SET '
+    # where = ' WHERE account_tb.id = ' + id
+    #
+    # for item in params.items():
+    #     params[item[0]] = '"' + item[1] + '"' if isinstance(item[1], str) else str(item[1])
+    # condition = ' ,'.join([' = '.join(item) for item in params.items()])
 
+    # sql = update + condition + where
+
+    try:
+        Account.query.filter(Account.id == id).update(params)
+        # db.session.execute(sql)
+        db.session.commit()  # 写数据库
+
+    except Exception as e:
+        db.session.rollback()
+        raise UpdateError(e)
+
+    acc = Account.query.get(id)
+    if acc:
         return {
             "id": acc.id,
             "account_name": acc.account_name

@@ -60,7 +60,7 @@ def update_commodity():
         return Res.fail(ResponseMessage.BAD_REQUEST)
     params = {}
     for attr, value in req_data.items():
-        if attr in Commodity.__dict__.keys() - ('update_time', 'create_time'):
+        if attr in Commodity.__dict__.keys() - ('id', 'update_time', 'create_time'):
             params[attr] = value
 
     data = update_by_params(params)
