@@ -20,7 +20,7 @@ SET FOREIGN_KEY_CHECKS=0;
 -- ----------------------------
 DROP TABLE IF EXISTS `order_tb`;
 CREATE TABLE `order_tb` (
-  `id` int NOT NULL COMMENT '主键',
+  `id` int NOT NULL AUTO_INCREMENT COMMENT '主键',
   `account_id` int NOT NULL COMMENT '账户id',
   `commodity_id` int NOT NULL COMMENT '商品id',
   `number` int NOT NULL COMMENT '商品数量',
