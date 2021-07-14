@@ -30,13 +30,14 @@ def get_by_id(commodity_id: int) -> dict:
     comm = query.filter(Commodity.id == commodity_id).with_entities(Commodity.id,
                                                                     Commodity.price, Commodity.description,
                                                                     Commodity.available_stock).first()
-
-    return {
-        "id": comm.id,
-        "price": comm.price,
-        "description": comm.description,
-        "available_stock": comm.available_stock
-    }
+    if comm:
+        return {
+            "id": comm.id,
+            "price": comm.price,
+            "description": comm.description,
+            "available_stock": comm.available_stock
+        }
+    return {}
 
 
 def get_by_params(params: dict) -> list:
@@ -53,10 +54,9 @@ def get_by_params(params: dict) -> list:
     }
     query = Commodity.query
     query = query.filter(Commodity.description.like('%{}%'.format(params['description'])))
-    query = query.filter(Commodity.price >= params['floor_price'])
-    query = query.filter(Commodity.price <= params['peak_price'])
+    query = query.filter(Commodity.price >= params['floor_price'], Commodity.price <= params['peak_price'])
 
-    count = len(query.all())
+    count = query.count()
     if not count:
         return comm_list
 
@@ -69,7 +69,12 @@ def get_by_params(params: dict) -> list:
     order_by = getattr(order_value, params['order_type'])()
 
     offset = params['from'] + (params['page'] - 1) * params['size']
-    commodity_list = query.order_by(order_by).offset(offset).limit(params['size']).all()
+    subq = query.with_entities(Commodity.id).order_by(order_by).offset(offset).limit(params['size']).subquery()
+
+    query = Commodity.query.join(
+        subq, Commodity.id == subq.c.id
+    )
+    commodity_list = query.all()
 
     for comm in commodity_list:
         comm_list['commodities'].append({
@@ -109,7 +114,7 @@ def update_by_params(params: dict) -> dict:
     :param params: 预处理好的待更新商品信息
     :return:
     """
-    id = params.pop('id')
+    id = int(params.pop('id'))
     params['update_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     # update = 'UPDATE commodity_tb SET '
     # where = ' WHERE commodity_tb.id = ' + id
@@ -148,19 +153,17 @@ def delete_by_id(commodity_id: int) -> dict:
     :return:
     """
     query = Commodity.query
-    comm = query.get(commodity_id)
+    query = query.filter(Commodity.id == commodity_id)
 
-    if comm:
-        try:
-            db.session.delete(comm)
-            db.session.commit()  # 写数据库
-        except Exception as e:
-            db.session.rollback()
-            raise DeleteError(e)
+    try:
+        yes = query.delete()
+        db.session.commit()  # 写数据库
+    except Exception as e:
+        db.session.rollback()
+        raise DeleteError(e)
+    if yes:
         return {
-            "id": comm.id,
-            "price": comm.price,
-            "description": comm.description,
-            "available_stock": comm.available_stock
+            "id": commodity_id,
+            "info": '已删除'
         }
     return {}

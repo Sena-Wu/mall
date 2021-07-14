@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 # Author:wu
-
+import logging
 from datetime import datetime
 
 from flask import request
@@ -9,6 +9,8 @@ from app.commodity import commodity
 from app.commodity.models import get_by_id, get_by_params, add_by_params, update_by_params, delete_by_id
 from app.utils.result import Res, ResponseMessage
 from .models import Commodity
+
+logger = logging.getLogger("root")  # 创建日志实例
 
 
 @commodity.route(rule='/<int:commodity_id>', methods=['GET'])
@@ -37,7 +39,7 @@ def list_commodity():
 
 @commodity.route(rule='/', methods=['POST'])
 def add_commodity():
-    price = 999999999999.99
+    price = '999999999.99'
     req_data = request.args
     params = {
         'price': req_data.get('price', price),
@@ -58,9 +60,16 @@ def update_commodity():
 
     if not req_data.get('id', 0):
         return Res.fail(ResponseMessage.BAD_REQUEST)
+    else:
+        try:
+            int(req_data.get('id'))
+        except Exception as e:
+            logger.error('{} id格式有误'.format(request.url))
+            return Res.fail(ResponseMessage.BAD_REQUEST)
+
     params = {}
     for attr, value in req_data.items():
-        if attr in Commodity.__dict__.keys() - ('id', 'update_time', 'create_time'):
+        if attr in Commodity.__dict__.keys() - ('update_time', 'create_time'):
             params[attr] = value
 
     data = update_by_params(params)

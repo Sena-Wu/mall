@@ -26,12 +26,14 @@ def get_account(account_id: int):
 def list_account():
     req_data = request.args
     params = {
-        "from": req_data.get('from', 0, type=int),
-        "size": req_data.get('size', 10, type=int),
-        "page": req_data.get('page', 1, type=int),
-        "account_name": req_data.get('account_name', '', type=str),
-        "order_value": req_data.get('order_value', "create_time", type=str),
-        "order_type": req_data.get('order_type', "desc", type=str),
+        "from": req_data.get('from', 0),
+        "size": req_data.get('size', 10),
+        "page": req_data.get('page', 1),
+        "account_name": req_data.get('account_name', ''),
+        "earlist": req_data.get('earlist', '2021-06-06 15:10:44'),
+        "lastest": req_data.get('lastest', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
+        "order_value": req_data.get('order_value', "create_time"),
+        "order_type": req_data.get('order_type', "desc"),
     }
 
     data = get_by_params(params)
@@ -64,9 +66,16 @@ def update_account():
 
     if not req_data.get('id', 0):
         return Res.fail(ResponseMessage.BAD_REQUEST)
+    else:
+        try:
+            int(req_data.get('id'))
+        except Exception as e:
+            logger.error('{} id格式有误'.format(request.url))
+            return Res.fail(ResponseMessage.BAD_REQUEST)
+
     params = {}
     for attr, value in req_data.items():
-        if attr in Account.__dict__.keys() - ('id', 'create_time', 'update_time'):
+        if attr in Account.__dict__.keys() - ('create_time', 'update_time'):
             params[attr] = value
 
     data = update_by_params(params)

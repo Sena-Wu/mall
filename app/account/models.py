@@ -32,10 +32,12 @@ def get_by_id(account_id: int) -> dict:
     query = Account.query
     acc = query.filter(Account.id == account_id).with_entities(Account.id, Account.account_name).first()
 
-    return {
-        "id": acc.id,
-        "account_name": acc.account_name
-    }
+    if acc:
+        return {
+            "id": acc.id,
+            "account_name": acc.account_name
+        }
+    return {}
 
 
 def get_by_params(params: dict) -> dict:
@@ -53,8 +55,9 @@ def get_by_params(params: dict) -> dict:
     }
     query = Account.query
     query = query.filter(Account.account_name.like('%{}%'.format(params['account_name'])))
+    query = query.filter(Account.create_time >= params['earlist'], Account.create_time <= params['lastest'])
 
-    count = len(query.all())
+    count = query.count()
     if not count:
         return acc_list
 
@@ -66,9 +69,13 @@ def get_by_params(params: dict) -> dict:
     order_value = Account.__dict__.get(params['order_value'])
     order_by = getattr(order_value, params['order_type'])()
 
-    # todo 分页查询优化一下：覆盖索引 + 延迟关联（子查询）
     offset = params['from'] + (params['page'] - 1) * params['size']
-    account_list = query.order_by(order_by).offset(offset).limit(params['size']).all()
+    subq = query.with_entities(Account.id).order_by(order_by).offset(offset).limit(params['size']).subquery()
+
+    query = Account.query.join(
+        subq, Account.id == subq.c.id
+    )
+    account_list = query.all()
 
     for acc in account_list:
         acc_list['accounts'].append({
@@ -104,7 +111,7 @@ def update_by_params(params: dict) -> dict:
     :param params: 预处理好的用户信息
     :return:
     """
-    id = params.pop('id')
+    id = int(params.pop('id'))
     params['update_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     # update = 'UPDATE account_tb SET '
     # where = ' WHERE account_tb.id = ' + id
@@ -112,7 +119,7 @@ def update_by_params(params: dict) -> dict:
     # for item in params.items():
     #     params[item[0]] = '"' + item[1] + '"' if isinstance(item[1], str) else str(item[1])
     # condition = ' ,'.join([' = '.join(item) for item in params.items()])
-
+    #
     # sql = update + condition + where
 
     try:
@@ -144,6 +151,7 @@ def delete_by_id(account_id: int) -> dict:
 
     if acc:
         try:
+            # Account.query.filter(Account.id == account_id).delete()
             db.session.delete(acc)
             db.session.commit()  # 写数据库
         except Exception as e:
@@ -162,19 +170,19 @@ def delete_by_params(params: dict) -> dict:
     :param params: 包含用户名的request参数字典
     :return:
     """
+
     query = Account.query
     query = query.filter(Account.account_name == params['account_name'])
-    acc = query.first()
+    try:
+       yes = query.delete()
+       db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        raise DeleteError(e)
 
-    if acc:
-        try:
-            db.session.delete(acc)
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            raise DeleteError(e)
+    if yes:
         return {
-            "id": acc.id,
-            "account_name": acc.account_name
+            "account_name": params['account_name'],
+            "info": '已删除'
         }
     return {}

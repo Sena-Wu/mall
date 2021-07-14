@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 # Author:wu
+import logging
 from datetime import datetime
 
 from flask import request
@@ -9,6 +10,8 @@ from app.order.models import get_by_id, get_by_params, add_by_params, update_by_
     pay_by_id
 from app.utils.result import Res, ResponseMessage
 from .models import Order
+
+logger = logging.getLogger("root")  # 创建日志实例
 
 
 @order.route(rule='/<int:order_id>', methods=['GET'])
@@ -23,7 +26,8 @@ def list_order():
     params = {
         "from": req_data.get('from', 0),
         "size": req_data.get('size', 10),
-        "page": req_data.get('page',1),
+        "page": req_data.get('page', 1),
+        "account_id": req_data.get('account_id', 0),
         "order_description": req_data.get('order_description', ''),
         "order_value": req_data.get('order_value', "create_time"),
         "order_type": req_data.get('order_type', "desc"),
@@ -58,20 +62,24 @@ def update_order():
 
     if not req_data.get('id', 0):
         return Res.fail(ResponseMessage.BAD_REQUEST)
+    else:
+        try:
+            int(req_data.get('id'))
+        except Exception as e:
+            logger.error('{} id格式有误'.format(request.url))
+            return Res.fail(ResponseMessage.BAD_REQUEST)
+
     params = {}
     for attr, value in req_data.items():
-        if attr in Order.__dict__.keys() - ('id', 'close_time', 'create_time', 'payment_time', 'order_status'):
+        if attr in Order.__dict__.keys() - ('close_time', 'create_time', 'payment_time', 'order_status'):
             params[attr] = value
 
     data = update_by_params(params)
     return Res.success(data)
 
 
-# （0：未支付，1：已支付，2：换货，3：退货）
 @order.route(rule='/<int:order_id>', methods=['PUT'])
 def pay_order(order_id):
-    # 这里不是这样的，应该要对用用户的操作
-    # 那你就直接改成支付接口，名字不要取update_status 应该叫支付
     if not order_id:
         return Res.fail(ResponseMessage.BAD_REQUEST)
 
@@ -81,6 +89,5 @@ def pay_order(order_id):
 
 @order.route(rule='/<int:order_id>', methods=['DELETE'])
 def delete_order(order_id):
-
     data = delete_by_id(order_id)
     return Res.success(data)

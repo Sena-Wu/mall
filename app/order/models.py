@@ -33,12 +33,13 @@ def get_by_id(order_id: int) -> dict:
     query = Order.query
     order = query.filter(Order.id == order_id).with_entities(Order.id, Order.order_status, Order.account_id).first()
 
-    return {
-        "id": order.id,
-        "order_status": order.order_status,
-        "account_id": order.account_id
-    }
-
+    if order:
+        return {
+            "id": order.id,
+            "order_status": order.order_status,
+            "account_id": order.account_id
+        }
+    return {}
 
 def get_by_params(params: dict) -> list:
     """
@@ -55,7 +56,8 @@ def get_by_params(params: dict) -> list:
     query = Order.query
     #todo 增加查询条件
     query = query.filter()
-    count = len(query.all())
+
+    count = query.count()
     if not count:
         return order_list
 
@@ -68,6 +70,11 @@ def get_by_params(params: dict) -> list:
     order_by = getattr(order_value, params['order_type'])()
 
     offset = params['from'] + (params['page'] - 1) * params['size']
+    subq = query.with_entities(Order.id).order_by(order_by).offset(offset).limit(params['size']).subquery()
+
+    query = Order.query.join(
+        subq, Order.id == subq.c.id
+    )
     ord_list = query.order_by(order_by).offset(offset).limit(params['size']).all()
 
     for order in ord_list:
@@ -96,7 +103,8 @@ def add_by_params(params: dict) -> dict:
     return {
         "id": order.id,
         "order_status": order.order_status,
-        "account_id": order.account_id
+        "account_id": order.account_id,
+        "order_amount": order.order_amount
     }
 
 
@@ -106,8 +114,7 @@ def update_by_params(params: dict) -> dict:
     :param params: 预处理好的订单信息
     :return:
     """
-    id = params.pop('id')
-    params['update_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    id = int(params.pop('id'))
     # update = 'UPDATE order_tb SET '
     # where = ' WHERE order_tb.id = ' + id
     #
@@ -116,15 +123,14 @@ def update_by_params(params: dict) -> dict:
     # condition = ' ,'.join([' = '.join(item) for item in params.items()])
     #
     # sql = update + condition + where
-
-    try:
-
-        Order.query.filter(Order.id == id).update(params)
-        # db.session.execute(sql)
-        db.session.commit()  # 写数据库
-    except Exception as e:
-        db.session.rollback()
-        raise UpdateError(e)
+    if params:
+        try:
+            Order.query.filter(Order.id == id).update(params)
+            # db.session.execute(sql)
+            db.session.commit()  # 写数据库
+        except Exception as e:
+            db.session.rollback()
+            raise UpdateError(e)
 
     order = Order.query.get(id)
     if order:
@@ -136,40 +142,41 @@ def update_by_params(params: dict) -> dict:
     return {}
 
 
-def pay_by_id(params: dict) -> dict:
+def pay_by_id(order_id) -> dict:
     query = Order.query
-    order = query.filter(Order.id == params[id]).with_for_update().first()
+    query = query.filter(Order.id == order_id, Order.order_status == 0)
 
-    # try:
-    #     Order.query.filter(Order.id == id and order.order_status == 0).update(params)
-    #     db.session.commit()
-    # except Exception as e:
-    #     db.session.rollback()
-    #     raise UpdateError(e)
+    order = query.first()
+    order_status = 0  # 订单修改标记
+    pay_status = 0  # 账户修改标记
+
     if order:
-        if order.order_status == 0:
-            account_id = order.account_id
-            account = Account.query.get(account_id)
-            if account.money < order.order_amount:
-                return {
-                    "id": order.id,
-                    "order_status": order.order_status,
-                    "account_id": order.account_id,
-                    "info": "money is not enough"
-                }
-            account.money -= order.order_amount
-            order.payment_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            order.order_status = 1
-            try:
-                db.session.commit()
-            except Exception as e:
-                db.session.rollback()
-                raise UpdateError(e)
+        try:
+            order_status = query.update(
+                {'order_status': 1, 'payment_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')})
+            if order_status:
+                pay_status = Account.query.filter(Account.id == order.account_id, Account.money >= order.order_amount).\
+                    update({'money': Account.money - order.order_amount,
+                            'update_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')})
+        except Exception as e:
+            db.session.rollback()
+            raise UpdateError(e)
+
+        if order_status and pay_status:
+            db.session.commit()
+            return {
+                "id": order.id,
+                "order_status": order.order_status,
+                "account_id": order.account_id,
+                "info": "already pay"
+            }
+        else:
+            db.session.rollback()
         return {
-            "id": order.id,
-            "order_status": order.order_status,
-            "account_id": order.account_id,
-            "info": "already pay"
+                "id": order.id,
+                "order_status": order.order_status,
+                "account_id": order.account_id,
+                "info": "支付失败"
         }
     return {}
 
@@ -181,19 +188,16 @@ def delete_by_id(order_id: int) -> dict:
     :return:
     """
     query = Order.query
-    order = query.get(order_id)
+    query = query.filter(Order.id == order_id)
 
-    if order:
-        try:
-            order.close_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            db.session.delete(order)
-            db.session.commit()  # 写数据库
-        except Exception as e:
-            db.session.rollback()
-            raise DeleteError(e)
-        return {
-            "id": order.id,
-            "order_status": order.order_status,
-            "account_id": order.account_id
-        }
+    try:
+        yes = query.delete()
+        db.session.commit()  # 写数据库
+    except Exception as e:
+        db.session.rollback()
+        raise DeleteError(e)
+    return {
+        "id": order_id,
+        "info": '已删除'
+    }
     return {}
