@@ -26,9 +26,9 @@ def get_account(account_id: int):
 def list_account():
     req_data = request.args
     params = {
-        "from": req_data.get('from', 0),
-        "size": req_data.get('size', 10),
-        "page": req_data.get('page', 1),
+        "from": req_data.get('from', 0, type=int),
+        "size": req_data.get('size', 10, type=int),
+        "page": req_data.get('page', 1, type=int),
         "account_name": req_data.get('account_name', ''),
         "earlist": req_data.get('earlist', '2021-06-06 15:10:44'),
         "lastest": req_data.get('lastest', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
@@ -43,13 +43,13 @@ def list_account():
 @account.route(rule='/', methods=['POST'])
 def add_account():
     account_name = random_str(10)
-    req_data = request.args
+    req_data = request.form
     params = {
         'account_name': req_data.get('account_name', account_name),
         'addr': req_data.get('addr', 'unknown'),
         'cell_phone': req_data.get('cell_phone', 'unknown'),
         'head_url': req_data.get('head_url', 'default.jpg'),
-        'sex': req_data.get('sex', 0),
+        'sex': req_data.get('sex', 0, type=int),
         'birthday': req_data.get('birthday', date.today()),
         'money': req_data.get('money', '0'),
         'create_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -62,7 +62,7 @@ def add_account():
 
 @account.route(rule='/', methods=['PUT'])
 def update_account():
-    req_data = request.args
+    req_data = request.form
 
     if not req_data.get('id', 0):
         return Res.fail(ResponseMessage.BAD_REQUEST)

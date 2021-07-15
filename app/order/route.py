@@ -23,11 +23,12 @@ def get_order(order_id):
 @order.route(rule='/', methods=['GET'])
 def list_order():
     req_data = request.args
+
     params = {
-        "from": req_data.get('from', 0),
-        "size": req_data.get('size', 10),
-        "page": req_data.get('page', 1),
-        "account_id": req_data.get('account_id', 0),
+        "from": req_data.get('from', 0, type=int),
+        "size": req_data.get('size', 10, type=int),
+        "page": req_data.get('page', 1, type=int),
+        "account_id": req_data.get('account_id', 0, type=int),
         "order_description": req_data.get('order_description', ''),
         "order_value": req_data.get('order_value', "create_time"),
         "order_type": req_data.get('order_type', "desc"),
@@ -39,12 +40,12 @@ def list_order():
 
 @order.route(rule='/', methods=['POST'])
 def add_order():
-    req_data = request.args
+    req_data = request.form
     params = {
-        'commodity_id': req_data.get('commodity_id', 0),
-        'account_id': req_data.get('account_id', 0),
-        'number': req_data.get('number', 0),
-        'order_amount': req_data.get('order_amount', 0),
+        'commodity_id': req_data.get('commodity_id', 0, type=int),
+        'account_id': req_data.get('account_id', 0, type=int),
+        'number': req_data.get('number', 0, type=int),
+        'order_amount': req_data.get('order_amount', 0, type=int),
         'addr': req_data.get('addr', 'unknown'),
         'order_status': 0,
         'create_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -58,7 +59,7 @@ def add_order():
 
 @order.route(rule='/', methods=['PUT'])
 def update_order():
-    req_data = request.args
+    req_data = request.form
 
     if not req_data.get('id', 0):
         return Res.fail(ResponseMessage.BAD_REQUEST)

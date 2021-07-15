@@ -24,8 +24,9 @@ def list_commodity():
     peak_price = '999999999.99'
     req_data = request.args
     params = {
-        "from": req_data.get('from', 0),
-        "size": req_data.get('size', 10),
+        "from": req_data.get('from', 0, type=int),
+        "size": req_data.get('size', 10, type=int),
+        "page": req_data.get('page', 1, type=int),
         "description": req_data.get('description', ''),
         "floor_price": req_data.get('floor_price', '0'),  # 价格筛选区间
         "peak_price": req_data.get('peak_price', peak_price),
@@ -40,11 +41,11 @@ def list_commodity():
 @commodity.route(rule='/', methods=['POST'])
 def add_commodity():
     price = '999999999.99'
-    req_data = request.args
+    req_data = request.form
     params = {
         'price': req_data.get('price', price),
         'description': req_data.get('description', ''),
-        'total_stock': req_data.get('total_stock', 0),
+        'total_stock': req_data.get('total_stock', 0, type=int),
         'available_stock': req_data.get('available_stock', req_data.get('total_stock', 0)),
         'create_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'update_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -56,7 +57,7 @@ def add_commodity():
 
 @commodity.route(rule='/', methods=['PUT'])
 def update_commodity():
-    req_data = request.args
+    req_data = request.form
 
     if not req_data.get('id', 0):
         return Res.fail(ResponseMessage.BAD_REQUEST)
