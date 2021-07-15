@@ -420,6 +420,7 @@ dmypy.json
 cython_debug/
 
 ### Example user template template
+logs
 ### Example user template
 
 # IntelliJ project files
