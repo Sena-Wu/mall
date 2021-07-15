@@ -38,6 +38,12 @@ def create_app():
         logger.error(e)
         return Res.fail(404)
 
+    # 处理405异常
+    @app.errorhandler(405)
+    def page_not_found(e):
+        logger.error(e)
+        return Res.fail(405)
+
     # 全局错误处理
     @app.errorhandler(Exception)
     def framework_error(e):
@@ -50,12 +56,12 @@ def create_app():
         return Res.fail("insert error")
 
     @app.errorhandler(UpdateError)
-    def insert_error(e):
+    def update_error(e):
         logger.error(e)
         return Res.fail("update error")
 
     @app.errorhandler(DeleteError)
-    def insert_error(e):
+    def delete_error(e):
         logger.error(e)
         return Res.fail("delete error")
 
